@@ -27,11 +27,6 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        // Kiểm tra quyền admin
-        if (auth()->user()->name !== 'admin') {
-            return response()->json(['message' => 'Bạn không có quyền thực hiện thao tác này'], 403);
-        }
-
         $user = User::create([
             'name' => $request->input('name'),
             'email' => $request->input('email'),

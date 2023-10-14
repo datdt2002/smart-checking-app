@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -13,16 +15,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        \App\Models\User::factory()->create([
+        User::truncate();
+        User::factory()->create([
             'name' => 'admin',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('admin'),
             'firstname' => 'Duong',
             'lastname' => 'Dat',
-            "mobile" => '0347022677',
-            "indentity" => '026202001441'
+            'mobile' => '0347022677',
+            'indentity' => '026202001441'
         ]);
+
+        User::query()->where('name', 'admin')->first()->roles()->attach([1,2,3,4]);
     }
 }

@@ -23,10 +23,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('login', [UserController::class, 'login']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/me', [UserController::class, 'getMe']);
 
-    Route::middleware(['AdminAccessMiddleware'])->group(function () {
+    Route::group(['middleware' => 'admin'], function () {
         Route::post('/users', [UserController::class, 'store']);
         Route::get('/users', [UserController::class, 'index']);
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
