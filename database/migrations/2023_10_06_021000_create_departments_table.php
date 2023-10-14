@@ -15,7 +15,6 @@ return new class extends Migration
             $table->increments('id');
             $table->string('name', 50);
             $table->integer('manager_id');
-            $table->timestamps();
         });
     }
 

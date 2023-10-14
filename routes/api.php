@@ -21,13 +21,17 @@ use Illuminate\Support\Facades\Route;
 // });
 
 Route::post('login', [UserController::class, 'login']);
-Route::middleware('auth:sanctum')->get('/me', [UserController::class, 'getMe']);
-Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logout']);
 
-Route::group(['middleware' => 'admin_access'], function () {
-    Route::post('/users', 'UserController@store');
-    Route::put('/users/{id}', 'UserController@update');
-    Route::delete('/users/{id}', 'UserController@destroy');
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [UserController::class, 'getMe']);
+
+    Route::middleware(['AdminAccessMiddleware'])->group(function () {
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    });
 });
+
 
 Route::apiResource('departments', DepartmentController::class);

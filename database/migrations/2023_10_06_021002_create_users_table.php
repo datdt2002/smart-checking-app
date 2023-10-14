@@ -53,6 +53,15 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('departments', function (Blueprint $table) {
+            $table->dropForeign('departments_manager_id_foreign');
+        });
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign('users_department_id_foreign');
+            $table->dropForeign('users_status_id_foreign');
+            $table->dropForeign('users_gender_id_foreign');
+        });
         Schema::dropIfExists('users');
+        Schema::dropIfExists('genders');
     }
 };

@@ -34,7 +34,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('check_logs', function (Blueprint $table) {
+        Schema::table('absents', function (Blueprint $table) {
             $table->dropForeign('absents_shift_id_foreign');
             $table->dropForeign('absents_user_id_foreign');
             $table->dropForeign('absents_approver_foreign');
