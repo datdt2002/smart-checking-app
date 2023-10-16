@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Department\StoreDepartmentRequest;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
@@ -13,8 +14,12 @@ class DepartmentController extends Controller
      */
     public function index()
     {
-        $departments = Department::all();
-        return response()->json(['departments' => $departments]);
+        $currentUser = Auth::user();
+        if ($currentUser->checkRole('Admin') || $currentUser->checkRole('Department manager')) {
+            $departments = Department::all();
+            return response()->json(['departments' => $departments]);
+        }
+        return response()->json(['message' => 'Bạn không có quyền này!'], 403);
     }
 
 

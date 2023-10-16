@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\User\StoreUserRequest;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -18,26 +19,36 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
-        return response()->json(['users' => $users]);
+        $currentUser = Auth::user();
+        if ($currentUser->checkRole('Admin') || $currentUser->checkRole('Department manager')) {
+            $users = User::all();
+            return response()->json(['All users' => $users], 200);
+        }
+        return response()->json(['message' => 'Bạn không có quyền này!'], 403);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Người có quyền tạo mới user sẽ tạo mới user, email đã xác thực luôn tại thời điểm tạo
      */
     public function store(StoreUserRequest $request)
     {
-        $user = User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => Hash::make($request->input('password')),
-            'firstname' => $request->input('firstname'),
-            'lastname' => $request->input('lastname'),
-            // 'mobile' => $request->input('mobile'),
-            // 'identity' => $request->input('identity'),
-        ]);
+        $currentUser = Auth::user();
+        if ($currentUser->checkPermission('create_user')) {
+            $newUser = User::create([
+                'name' => $request->input('name'),
+                'email' => $request->input('email'),
+                'password' => Hash::make($request->input('password')),
+                'firstname' => $request->input('firstname'),
+                'lastname' => $request->input('lastname'),
+                'active' => true,
+            ]);
 
-        return response()->json(['message' => 'Thông tin đã được thêm thành công']);
+            // Gán vai trò cho người dùng mới (2-User, 4-Employee)
+            $newUser->roles()->attach([2, 4]);
+
+            return response()->json(['message' => 'Tạo mới người dùng thành công!'], 201);
+        }
+        return response()->json(['message' => 'Bạn không có quyền!'], 403);
     }
 
 
@@ -76,6 +87,7 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Thông tin người dùng đã được cập nhật thành công', 'user' => $user]);
     }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -104,21 +116,27 @@ class UserController extends Controller
         ]);
 
         if (Auth::attempt($credentials)) {
+            // xác thực đăng nhập
             $user = Auth::user();
-            $token = $user->createToken('User Token')->plainTextToken;
-            return response()->json(['token' => $token]);
+            if ($user->checkActive()) {
+                $token = $user->createToken('User Token')->plainTextToken;
+                return response()->json(['token' => $token]);
+            } //Không có quyền checkin thì logout
+            else {
+                Auth::logout();
+                return response()->json(['message' => 'Tài khoản của bạn chưa được kích hoạt'], 403);
+            }
         }
-
-        throw ValidationException::withMessages([
-            'login' => ['Tên đăng nhập hoặc mật khẩu không chính xác'],
-        ]);
+        return response()->json(['message' => 'Tên đăng nhập hoặc mật khẩu không chính xác'], 401);
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        $user = Auth::user();
-        $user->tokens()->delete();
-        return response()->json(['message' => 'Đăng xuất thành công']);
+        if (!Auth::check()) {
+            return response()->json(['message' => "Đã đăng nhập đâu mà đòi đăng xuất"], 401);
+        }
+        Auth::user()->tokens()->delete();
+        return response()->json(['message' => 'Đăng xuất thành công'], 200);
     }
 
     public function getMe(Request $request)

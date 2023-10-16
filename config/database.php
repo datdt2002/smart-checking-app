@@ -76,6 +76,9 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'prefer',
+            'options' => [
+                'timezone' => 'Asia/Ho_Chi_Minh',
+            ],
         ],
 
         'sqlsrv' => [
