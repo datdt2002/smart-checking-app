@@ -15,7 +15,7 @@ class DepartmentController extends Controller
     public function index()
     {
         $currentUser = Auth::user();
-        if ($currentUser->checkRole('Admin') || $currentUser->checkRole('Department manager')) {
+        if ($currentUser->checkRole('Admin')) {
             $departments = Department::all();
             return response()->json(['departments' => $departments]);
         }
@@ -28,10 +28,14 @@ class DepartmentController extends Controller
      */
     public function store(StoreDepartmentRequest $request)
     {
-        $department = Department::create([
-            'name' => $request->input('name'),
-        ]);
-        return response()->json(['department' => $department], 201);
+        $currentUser = Auth::user();
+        if ($currentUser->checkPermission('create_department')) {
+            $department = Department::create([
+                'name' => $request->input('name'),
+            ]);
+            return response()->json(['message' => 'Tạo mới phòng ban thành công!'], 201);
+        }
+        return response()->json(['message' => 'Bạn không có quyền!'], 403);
     }
 
     /**

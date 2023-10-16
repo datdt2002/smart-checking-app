@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Models\Department;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -54,9 +55,8 @@ class DatabaseSeeder extends Seeder
         Role::query()->where('name', '=', 'Department Manager')->first()->permissions()->attach([3]);
         Role::query()->where('name', '=', 'Employee')->first()->permissions()->attach([2]);
 
-
         User::truncate();
-        User::factory()->create([
+        $admin = User::factory()->create([
             'name' => 'admin',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('admin'),
@@ -67,5 +67,12 @@ class DatabaseSeeder extends Seeder
             'active' => 'true',
         ]);
         User::query()->where('name', 'admin')->first()->roles()->attach([1, 2, 3, 4]);
+
+        $department_admin = Department::create([
+            'name' => 'Admin Department',
+            'manager_id' => $admin->id,
+        ]);
+        $admin->department_id = $department_admin->id;
+        $admin->save();
     }
 }

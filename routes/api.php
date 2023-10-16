@@ -28,7 +28,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/createUser', [UserController::class, 'store']);
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::post('/createDepartment', [DepartmentController::class, 'store']);
 });
-
-
-Route::apiResource('departments', DepartmentController::class);
