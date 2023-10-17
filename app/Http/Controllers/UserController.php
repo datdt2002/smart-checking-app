@@ -8,6 +8,7 @@ use App\Notifications\ActiveAccount;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -22,8 +23,12 @@ class UserController extends Controller
     public function index()
     {
         $currentUser = Auth::user();
-        if ($currentUser->checkRole('Admin') || $currentUser->checkRole('Department manager')) {
+        if ($currentUser->checkRole('Admin')) {
             $users = User::all();
+            return response()->json(['All users' => $users], 200);
+        }
+        if ($currentUser->checkRole('Department Manager')) {
+            $users = User::where('department_id', $currentUser->department_id)->get();
             return response()->json(['All users' => $users], 200);
         }
         return response()->json(['message' => 'Bạn không có quyền này!'], 403);
@@ -36,6 +41,7 @@ class UserController extends Controller
     {
         $currentUser = Auth::user();
         if ($currentUser->checkPermission('create_user')) {
+            DB::beginTransaction();
             $newUser = User::create([
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
@@ -43,15 +49,20 @@ class UserController extends Controller
                 'firstname' => $request->input('firstname'),
                 'lastname' => $request->input('lastname'),
                 'active' => true,
-                'remember_token' => Str::random(10)
+                'remember_token' => Str::random(10),
             ]);
-
-            // Gán vai trò cho người dùng mới (2-User, 4-Employee)
-            $newUser->roles()->attach([2, 4]);
-
+            if ($currentUser->checkPermission('create_role')) {
+                $newUser->roles()->attach($request->role);
+            } elseif ($request->role) {
+                return response()->json(['message' => 'Bạn không có quyền set role cho user!'], 403);
+            } else {
+                // Gán vai trò cho người dùng mới (2-User, 4-Employee)
+                $newUser->roles()->attach([2, 4]);
+            }
+            DB::Commit();
             return response()->json(['message' => 'Tạo mới người dùng thành công!'], 201);
         }
-        return response()->json(['message' => 'Bạn không có quyền!'], 403);
+        return response()->json(['message' => 'Bạn không có quyền tạo mới User!'], 403);
     }
 
 

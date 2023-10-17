@@ -14,14 +14,11 @@ class DepartmentController extends Controller
      */
     public function index()
     {
-        $currentUser = Auth::user();
-        if ($currentUser->checkRole('Admin')) {
-            $departments = Department::all();
-            return response()->json(['departments' => $departments]);
-        }
-        return response()->json(['message' => 'Bạn không có quyền này!'], 403);
+        $excludedDepartmentName = 'Admin Department';
+        return response()->json(['departments' => Department::where('name', '!=', $excludedDepartmentName)
+            ->orderBy('name')
+            ->pluck('name')]);
     }
-
 
     /**
      * Store a newly created resource in storage.

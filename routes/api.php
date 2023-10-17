@@ -29,9 +29,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/createUser', [UserController::class, 'store']);
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
     Route::post('/createDepartment', [DepartmentController::class, 'store']);
 });
-
+Route::get('/departments', [DepartmentController::class, 'index']);
 Route::post('/register', [UserController::class, 'register']);
 Route::get('/activate/{activationToken}', function ($activationToken) {
     $needActiveUser = User::where('activation_token', $activationToken)->first();
