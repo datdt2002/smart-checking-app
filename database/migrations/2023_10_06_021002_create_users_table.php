@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->rememberToken();
+            $table->string('activation_token', 60)->nullable();
             $table->string('firstname', 30);
             $table->string('lastname', 30);
             $table->boolean('active')->default(false);

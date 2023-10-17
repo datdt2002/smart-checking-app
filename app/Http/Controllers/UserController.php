@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\User\StoreUserRequest;
 use App\Models\User;
+use App\Notifications\ActiveAccount;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 use function PHPUnit\Framework\isNull;
@@ -41,6 +43,7 @@ class UserController extends Controller
                 'firstname' => $request->input('firstname'),
                 'lastname' => $request->input('lastname'),
                 'active' => true,
+                'remember_token' => Str::random(10)
             ]);
 
             // Gán vai trò cho người dùng mới (2-User, 4-Employee)
@@ -142,5 +145,19 @@ class UserController extends Controller
     public function getMe(Request $request)
     {
         return $request->user();
+    }
+
+    public function register(StoreUserRequest $request)
+    {
+        $registerUser = User::create([
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password')),
+            'firstname' => $request->input('firstname'),
+            'lastname' => $request->input('lastname'),
+            'remember_token' => Str::random(10),
+            'activation_token' => Str::random(60),
+        ]);
+        $registerUser->notify(new ActiveAccount($registerUser));
     }
 }

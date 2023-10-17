@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,4 +30,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
     Route::post('/createDepartment', [DepartmentController::class, 'store']);
+});
+
+Route::post('/register', [UserController::class, 'register']);
+Route::get('/activate/{activationToken}', function ($activationToken) {
+    $needActiveUser = User::where('activation_token', $activationToken)->first();
+    if ($needActiveUser) {
+        $needActiveUser->update(['active' => true]);
+        $needActiveUser->activation_token = null;
+        $needActiveUser->save();
+        return response()->json(['message' => 'Kích hoạt tài khoản thành công'], 200);
+    } else {
+        return response()->json(['message' => 'Mã kích hoạt bị lỗi hoặc không tồn tại'], 404);
+    }
 });
