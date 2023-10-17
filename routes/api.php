@@ -38,6 +38,8 @@ Route::get('/activate/{activationToken}', function ($activationToken) {
     if ($needActiveUser) {
         $needActiveUser->update(['active' => true]);
         $needActiveUser->activation_token = null;
+        // Gán quyền "user" cho người dùng
+        $needActiveUser->roles()->attach(2);
         $needActiveUser->save();
         return response()->json(['message' => 'Kích hoạt tài khoản thành công'], 200);
     } else {
