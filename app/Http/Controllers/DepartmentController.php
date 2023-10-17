@@ -4,20 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Department\StoreDepartmentRequest;
 use App\Models\Department;
+use App\Repositories\DepartmentRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
+    protected $departmentRepository;
+
+    public function __construct(DepartmentRepository $departmentRepository)
+    {
+        $this->departmentRepository = $departmentRepository;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $excludedDepartmentName = 'Admin Department';
-        return response()->json(['departments' => Department::where('name', '!=', $excludedDepartmentName)
-            ->orderBy('name')
-            ->pluck('name')]);
+        $departments = $this->departmentRepository->getAllDepartmentsExcept($excludedDepartmentName);
+        return response()->json(['departments' => $departments]);
     }
 
     /**
@@ -27,9 +33,10 @@ class DepartmentController extends Controller
     {
         $currentUser = Auth::user();
         if ($currentUser->checkPermission('create_department')) {
-            $department = Department::create([
+            $data = [
                 'name' => $request->input('name'),
-            ]);
+            ];
+            $department = $this->departmentRepository->createDepartment($data);
             return response()->json(['message' => 'Tạo mới phòng ban thành công!'], 201);
         }
         return response()->json(['message' => 'Bạn không có quyền!'], 403);
@@ -40,7 +47,7 @@ class DepartmentController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $department = Department::find($id);
+        $department = $this->departmentRepository->getDepartmentById($id);
 
         if (!$department) {
             return response()->json(['message' => 'Không tìm thấy bộ phận'], 404);
@@ -54,7 +61,7 @@ class DepartmentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $department = Department::find($id);
+        $department = $this->departmentRepository->getDepartmentById($id);
 
         if (!$department) {
             return response()->json(['message' => 'Không tìm thấy bộ phận'], 404);
@@ -65,7 +72,8 @@ class DepartmentController extends Controller
             //Thêm các quy tắc xác thực cho các trường khác nếu cần
         ]);
 
-        $department->update($request->all());
+        $data = $request->all();
+        $this->departmentRepository->updateDepartment($department, $data);
 
         return response()->json(['department' => $department], 200);
     }
@@ -75,13 +83,13 @@ class DepartmentController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $department = Department::find($id);
+        $department = $this->departmentRepository->getDepartmentById($id);
 
         if (!$department) {
             return response()->json(['message' => 'Không tìm thấy bộ phận'], 404);
         }
 
-        $department->delete();
+        $this->departmentRepository->deleteDepartment($department);
 
         return response()->json(['message' => 'Bộ phận đã được xóa'], 204);
     }
