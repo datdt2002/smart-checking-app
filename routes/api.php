@@ -3,6 +3,7 @@
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
+use \App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,17 +22,21 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-Route::post('login', [UserController::class, 'login']);
+Route::post('login', [AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::post('/logout', [UserController::class, 'logout']);
-    Route::get('/me', [UserController::class, 'getMe']);
+    //auth
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'getMe']);
+
     Route::post('/createUser', [UserController::class, 'store']);
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     Route::post('/createDepartment', [DepartmentController::class, 'store']);
 });
+
+
 Route::get('/departments', [DepartmentController::class, 'index']);
 Route::post('/register', [UserController::class, 'register']);
 Route::get('/activate/{activationToken}', function ($activationToken) {
