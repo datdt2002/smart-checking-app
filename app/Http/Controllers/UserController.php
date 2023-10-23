@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageEvent;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Models\User;
 use App\Notifications\ActiveAccount;
@@ -38,31 +39,37 @@ class UserController extends Controller
         return response()->json(['message' => 'Bạn không có quyền này!'], 403);
     }
 
+    public function test() {
+        event(new MessageEvent('', "Create successfully"));
+        return 1;
+    }
     /**
      * Người có quyền tạo mới user sẽ tạo mới user, email đã xác thực luôn tại thời điểm tạo
      */
     public function store(StoreUserRequest $request)
     {
         $currentUser = Auth::user();
-        if ($currentUser->checkPermission('create_user')) {
-            try {
-                $newUser = $this->userRepository->createUser($request->validated());
-                if ($currentUser->checkPermission('create_role')) {
-                    $newUser->roles()->attach($request->role);
-                } elseif ($request->role) {
-                    return response()->json(['message' => 'Bạn không có quyền set role cho user!'], 403);
-                } else {
-                    // Gán vai trò cho người dùng mới (2-User, 4-Employee)
-                    $newUser->roles()->attach([2, 4]);
-                }
-                return response()->json(['message' => 'Tạo mới người dùng thành công!'], 201);
-            } catch (\Exception $e) {
-                return response()->json(['message' => 'Đã xảy ra lỗi khi tạo mới người dùng!'], 500);
-            }
-        }
-        return response()->json(['message' => 'Bạn không có quyền tạo mới User!'], 403);
-    }
 
+        if (!$currentUser->checkPermission('create_user')) {
+            return response()->json(['message' => 'Bạn không có quyền tạo mới User!'], 403);
+        }
+
+        try {
+            $newUser = $this->userRepository->createUser($request->validated());
+
+            if ($currentUser->checkPermission('create_role')) {
+                $this->userRepository->attachRole($newUser, $request->role);
+            } elseif ($request->role) {
+                return response()->json(['message' => 'Bạn không có quyền set role cho user!'], 403);
+            } else {
+                $this->userRepository->attachDefaultedRole($newUser);
+            }
+
+            return response()->json(['message' => 'Tạo mới người dùng thành công!'], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Đã xảy ra lỗi khi tạo mới người dùng!'], 500);
+        }
+    }
 
     /**
      * Display the specified resource.
@@ -70,7 +77,7 @@ class UserController extends Controller
     public function show($id)
     {
         // Kiểm tra quyền admin
-        if (auth()->user()->name !== 'admin') {
+        if (!auth()->user()->checkRole('Admin')) {
             return response()->json(['message' => 'Bạn không có quyền thực hiện thao tác này'], 403);
         }
 
@@ -92,13 +99,18 @@ class UserController extends Controller
      */
     public function update(Request $request)
     {
-        // Kiểm tra quyền admin
-        if (auth()->user()->name !== 'admin') {
-            return response()->json(['message' => 'Bạn không có quyền thực hiện thao tác này'], 403);
+        // Kiểm tra xem người dùng đã đăng nhập hay chưa
+        if (!auth()->check()) {
+            return response()->json(['message' => 'Bạn cần đăng nhập để thực hiện thao tác này'], 401);
         }
 
         try {
             $user = Auth::user();
+
+            // Kiểm tra quyền admin hoặc chính người dùng
+            if (!auth()->user()->checkRole('Admin') && $user->id !== $request->user_id) {
+                return response()->json(['message' => 'Bạn không có quyền thực hiện thao tác này'], 403);
+            }
 
             $this->userRepository->updateUser($user, $request->all());
 
@@ -115,14 +127,13 @@ class UserController extends Controller
     {
         try {
             $user = $this->userRepository->getUserById($id);
+            // Kiểm tra quyền admin
+            if (Auth::user()->name !== 'admin') {
+                return response()->json(['message' => 'Bạn không có quyền xóa thông tin'], 403);
+            }
 
             if (!$user) {
                 return response()->json(['message' => 'Không tìm thấy người dùng'], 404);
-            }
-
-            // Kiểm tra quyền admin
-            if (Auth::user()->name !== 'admin') {
-                return response()->json(['message' => 'Bạn không có quyềnxóa thông tin'], 403);
             }
 
             $this->userRepository->deleteUser($user);

@@ -35,4 +35,12 @@ class UserRepository
     {
         $user->delete();
     }
+    public function attachRole($user, $role)
+    {
+        $user->roles()->attach($role);
+    }
+    public function attachDefaultedRole($user)
+    {
+        $user->roles()->attach([2, 4]);
+    }
 }
